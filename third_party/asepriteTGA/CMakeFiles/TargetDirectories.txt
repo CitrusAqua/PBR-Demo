@@ -1,0 +1,4 @@
+C:/Users/citrus/workspace/DX12Engine/third_party/asepriteTGA/CMakeFiles/tga-lib.dir
+C:/Users/citrus/workspace/DX12Engine/third_party/asepriteTGA/CMakeFiles/INSTALL.dir
+C:/Users/citrus/workspace/DX12Engine/third_party/asepriteTGA/CMakeFiles/ALL_BUILD.dir
+C:/Users/citrus/workspace/DX12Engine/third_party/asepriteTGA/CMakeFiles/ZERO_CHECK.dir

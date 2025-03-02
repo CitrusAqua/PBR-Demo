@@ -1,0 +1,2 @@
+C:\Users\citrus\workspace\DX12Engine\third_party\asepriteTGA\install/lib/tga-lib.lib
+C:\Users\citrus\workspace\DX12Engine\third_party\asepriteTGA\install/include/tga.h
