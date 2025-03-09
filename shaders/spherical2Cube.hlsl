@@ -1,4 +1,4 @@
-#include "../ShaderStructs.h"
+#include "../ShaderSharedStructs.h"
 #include "helperFunctions.hlsli"
 
 #define g_RootSignature \

@@ -1,3 +1,8 @@
+// ===== ===== ===== ===== ===== ===== ===== =====
+// Unreal Engine 4 style environment BRDF pre-computation.
+// Ref: https://cdn2-unrealengine-1251447533.file.myqcloud.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
+// ===== ===== ===== ===== ===== ===== ===== =====
+
 #include "helperFunctions.hlsli"
 
 #define g_RootSignature \
@@ -6,11 +11,6 @@
 
 RWTexture2D<float4> g_BRDFMap : register(u0);
 
-// *************************************************************************************************
-// Unreal Engine 4 style environment BRDF pre-computation.
-// Ref: https://cdn2-unrealengine-1251447533.file.myqcloud.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
-//
-// We make 
 float2 IntegrateBRDF(float Roughness, float NoV)
 {
     float3 V;
@@ -79,5 +79,4 @@ void CSMain(uint3 ThreadID : SV_DispatchThreadID)
     float2 Result = IntegrateBRDF(Roughness, NoV);
 
     g_BRDFMap[ThreadID.xy] = float4(Result, 0.0f, 1.0f);
-    //g_BRDFMap[ThreadID.xy] = float4((float) ThreadID.x / Height, (float) ThreadID.y / Width, 0.0f, 1.0f);
 }

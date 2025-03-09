@@ -21,6 +21,8 @@
 void STexture::_LoadEXR(const char* filename)
 {
 	TextureData res;
+	res.name = filename;
+
 	int inputChannelCount, overrideChannelCount, channelSize;
 
 	// Read EXR file header
@@ -223,6 +225,7 @@ void STexture::_LoadStbi(const char* filename)
 	res.height = height;
 	res.pixelSize = 4;
 	res.format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	res.name = filename;
 	res.reserve(width * height * 4);
 	char* basePtr = res.data();
 	memset(basePtr, 255, res.size());
@@ -255,7 +258,7 @@ void STexture::LoadTextures()
 
 void STexture::CopyToUploadHeap(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, DescHeapWrapper& hh)
 {
-	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> tex_handles;
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> tex_SRVCPUHandles;
 
 	// Create upload heaps and data heaps
 	// Schedule copy
@@ -263,10 +266,10 @@ void STexture::CopyToUploadHeap(ID3D12Device* device, ID3D12GraphicsCommandList*
 	{
 		ComPtr<ID3D12Resource> uploadHeap;
 		ComPtr<ID3D12Resource> dataHeap;
-		D3D12_CPU_DESCRIPTOR_HANDLE descHandle;
+		D3D12_CPU_DESCRIPTOR_HANDLE SRVCPUHandle;
 
 		D3D12_RESOURCE_DESC textureDesc = {};
-		textureDesc.MipLevels = 1;
+		textureDesc.MipLevels = 0;  // 0: Auto calculate mipmaps level
 		textureDesc.Format = tex.format;
 		textureDesc.Width = tex.width;
 		textureDesc.Height = tex.height;
@@ -283,6 +286,7 @@ void STexture::CopyToUploadHeap(ID3D12Device* device, ID3D12GraphicsCommandList*
 			D3D12_RESOURCE_STATE_COMMON,
 			nullptr,
 			IID_PPV_ARGS(&dataHeap)));
+		dataHeap->SetName((LPCWSTR)tex.name.c_str());
 
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(dataHeap.Get(), 0, 1);
 		ThrowIfFailed(device->CreateCommittedResource(
@@ -298,28 +302,27 @@ void STexture::CopyToUploadHeap(ID3D12Device* device, ID3D12GraphicsCommandList*
 		textureData.RowPitch = tex.width * tex.pixelSize;
 		textureData.SlicePitch = textureData.RowPitch * tex.height;
 
-		descHandle = hh.AllocateDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1);
+		SRVCPUHandle = hh.AllocateDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1);
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = textureDesc.Format;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = 1;
-		device->CreateShaderResourceView(dataHeap.Get(), &srvDesc, descHandle);
-
-		//GPUHandle = hh.CopyDescriptorsToGPUHeap(1, descHandle);
+		srvDesc.Texture2D.MipLevels = dataHeap->GetDesc().MipLevels;
+		device->CreateShaderResourceView(dataHeap.Get(), &srvDesc, SRVCPUHandle);
+		m_SRVsSeparated.push_back(hh.CopyDescriptorsToGPUHeap(1, SRVCPUHandle));
 
 		UpdateSubresources(cmdList, dataHeap.Get(), uploadHeap.Get(), 0, 0, 1, &textureData);
 		cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dataHeap.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
 		m_textureResources.push_back(std::move(dataHeap));
 		m_uploadHeaps.push_back(std::move(uploadHeap));
-		tex_handles.push_back(descHandle);
+		tex_SRVCPUHandles.push_back(SRVCPUHandle);
 	}
 
 	// Upload descriptors
 	CD3DX12_CPU_DESCRIPTOR_HANDLE CPUHandle;
-	hh.AllocateGPUDescriptors(tex_handles.size(), CPUHandle, m_GPUHandle);
-	for (auto& handle : tex_handles)
+	hh.AllocateGPUDescriptors(tex_SRVCPUHandles.size(), CPUHandle, m_SRVCombined);
+	for (auto& handle : tex_SRVCPUHandles)
 	{
 		device->CopyDescriptorsSimple(1, CPUHandle, handle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		CPUHandle.Offset(1, hh.GetDescriptorSizeCBV_SRV_UAV());
@@ -338,6 +341,7 @@ void STexture::ReleaseCPUData()
 
 void STexture::ReleaseGPUData()
 {
-	m_GPUHandle.ptr = 0;
+	m_SRVCombined.ptr = 0;
+	m_SRVsSeparated.clear();
 	m_textureResources.clear();
 }

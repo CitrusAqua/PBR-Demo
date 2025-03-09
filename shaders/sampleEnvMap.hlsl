@@ -1,4 +1,4 @@
-#include "../ShaderStructs.h"
+#include "../ShaderSharedStructs.h"
 
 #define g_RootSignature \
     "RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), " \
@@ -45,6 +45,5 @@ PSInput VSMain(VSInput input)
 [RootSignature(g_RootSignature)]
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    //return g_cubemap.Sample(g_sampler, input.obj_position);
-    return g_cubemap.SampleLevel(g_sampler, input.obj_position, 1);
+    return g_cubemap.SampleLevel(g_sampler, input.obj_position, 0);
 }

@@ -28,8 +28,7 @@ private:
 inline void ThrowIfFailed(HRESULT hr)
 {
     if (FAILED(hr))
-    {
-        throw HrException(hr);
+    {        throw HrException(hr);
     }
 }
 

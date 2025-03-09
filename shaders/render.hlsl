@@ -1,4 +1,4 @@
-#include "../ShaderStructs.h"
+#include "../ShaderSharedStructs.h"
 #include "helperFunctions.hlsli"
 
 #define g_RootSignature \
@@ -7,14 +7,13 @@
     "CBV(b1, visibility = SHADER_VISIBILITY_VERTEX), " \
     "CBV(b2, visibility = SHADER_VISIBILITY_PIXEL), " \
 	"DescriptorTable(SRV(t0), SRV(t1), SRV(t2), visibility = SHADER_VISIBILITY_PIXEL), " \
-    "DescriptorTable(SRV(t3), SRV(t4), SRV(t5), visibility = SHADER_VISIBILITY_PIXEL), " \
+    "DescriptorTable(SRV(t3), SRV(t4), SRV(t5), SRV(t6), visibility = SHADER_VISIBILITY_PIXEL), " \
 	"StaticSampler(s0, " \
-        "filter = FILTER_ANISOTROPIC, " \
+        "filter = FILTER_MIN_MAG_MIP_LINEAR, " \
 		"visibility = SHADER_VISIBILITY_PIXEL, " \
 		"addressU = TEXTURE_ADDRESS_WRAP, " \
 		"addressV = TEXTURE_ADDRESS_WRAP, " \
-		"addressW = TEXTURE_ADDRESS_WRAP, " \
-        "maxAnisotropy = 16), " \
+		"addressW = TEXTURE_ADDRESS_WRAP), " \
     "StaticSampler(s1, " \
         "filter = FILTER_MIN_MAG_MIP_LINEAR, " \
         "visibility = SHADER_VISIBILITY_PIXEL, " \
@@ -24,13 +23,14 @@
 
 ConstantBuffer<CameraConstants> g_camera : register(b0);
 ConstantBuffer<ModelConstants> g_model : register(b1);
-ConstantBuffer<PixelShaderConstants> g_pscb : register(b2);
+ConstantBuffer<PBRConstants> g_pbrcb : register(b2);
 TextureCube g_irradiance : register(t0);
 TextureCube g_prefilteredEnv : register(t1);
 Texture2D<float2> g_BRDF : register(t2);
 Texture2D<float4> g_diffuse : register(t3);
 Texture2D<float3> g_normal : register(t4);
 Texture2D<float3> g_arm : register(t5);  // Ambient Occlusion, Roughness, Metalness
+Texture2D<float3> g_emission : register(t6); // Emissive
 SamplerState g_sampler : register(s0);
 SamplerState g_sampler_BRDF : register(s1);
 
@@ -89,13 +89,13 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3x3 TBN = float3x3(input.world_tangent, input.world_bitangent, input.world_normal);
     
     float3 N = normalize(mul(normal_color, TBN));
-    float3 V = normalize(g_pscb.eyePosition - input.world_position);
+    float3 V = normalize(g_pbrcb.eyePosition - input.world_position);
     float3 R = reflect(-V, N);
     float NoV = saturate(dot(N, V));
     
     // Diffuse
     float3 albedo = g_diffuse.Sample(g_sampler, input.uv).rgb;
-    float3 diffuse = g_irradiance.Sample(g_sampler, N).rgb * albedo;
+    float3 diffuse = g_irradiance.SampleLevel(g_sampler, N, 0).rgb * albedo;
     
     // Specular
     float3 arm = g_arm.Sample(g_sampler, input.uv).rgb;
@@ -110,29 +110,12 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 kD = (1.0f - kS) * (1.0f - metalness);
     
     float3 prefilteredColor = g_prefilteredEnv.SampleLevel(g_sampler, R, roughness * 5.0).rgb;
-    float2 envBRDF = g_BRDF.Sample(g_sampler_BRDF, float2(min(NoV, 0.999f), roughness)).rg;
+    float2 envBRDF = g_BRDF.SampleLevel(g_sampler_BRDF, float2(min(NoV, 0.999f), roughness), 0).rg;
     float3 specular = prefilteredColor * (F0 * envBRDF.x + envBRDF.y) * INV_PI;
     
-    float3 color = (kD * diffuse + specular) * ao;
-    //color = prefilteredColor;
-    //return float4(envBRDF, 1.0f, 1.0f);
-    //return float4(g_BRDF.Sample(g_sampler, input.uv), 0.0f, 1.0f);
+    // Emission
+    float3 emission = g_emission.Sample(g_sampler, input.uv).rgb * 20;
+    
+    float3 color = (kD * diffuse + specular) * ao + emission;
     return float4(color, 1.0f);
-    
-    //float3 reflect = g_environment.Sample(g_sampler, R).rgb;
-    //float3 irradiance = g_irradiance.Sample(g_sampler, N).rgb;
-    //float3 albedo = g_diffuse.Sample(g_sampler, input.uv).rgb;
-    //float3 diffuse = irradiance * albedo;
-    
-    
-    //float3 prefiltered = g_prefilteredEnv.SampleLevel(g_sampler, R, roughness * 5.0).rgb;
-    //float2 envBRDF = g_BRDF.Sample(g_sampler, float2(min(NoV, 0.999f), roughness)).rg;
-    
-    //diffuse = prefiltered * albedo;
-    
-    //float4 mix = float4((1 - roughness) * prefiltered + roughness * diffuse, 1.0f);
-    
-    //mix = float4(g_BRDF.Sample(g_sampler, input.uv).rg, 0.0f, 1.0f);
-    
-    //return mix;
 }

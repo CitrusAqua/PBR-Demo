@@ -4,8 +4,9 @@
 #include <filesystem>
 #include <shlobj.h>
 
-using namespace Microsoft::WRL;
+//#define ENABLE_PIX_DEBUGGING
 
+using namespace Microsoft::WRL;
 
 static std::wstring GetLatestWinPixGpuCapturerPath_Cpp17()
 {
@@ -48,12 +49,15 @@ DXSample::DXSample(UINT width, UINT height, std::wstring name) :
 
 	m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 
+#ifdef ENABLE_PIX_DEBUGGING
     // Check to see if a copy of WinPixGpuCapturer.dll has already been injected into the application.
-        // This may happen if the application is launched through the PIX UI. 
+    // This may happen if the application is launched through the PIX UI.
     if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
     {
         LoadLibrary(GetLatestWinPixGpuCapturerPath_Cpp17().c_str());
     }
+#endif
+
 }
 
 DXSample::~DXSample()

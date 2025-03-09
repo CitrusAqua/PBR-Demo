@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ShaderStructs.h"
+#include "ShaderSharedStructs.h"
 #include "DescHeapWrapper.h"
 
 #include <vector>

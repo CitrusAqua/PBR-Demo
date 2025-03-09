@@ -11,12 +11,18 @@
 #define GRS_INT_SAMPLES_CNT 2048u
 
 // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// Tone mapping
+// Color space conversion
+// Source: https://en.wikipedia.org/wiki/SRGB#The_reverse_transformation
 // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-float3 LinearToSRGB(float3 color)
+float3 LinearToSRGB(float3 x)
 {
     // Approximately pow(color, 1.0 / 2.2)
-    return color < 0.0031308 ? 12.92 * color : 1.055 * pow(abs(color), 1.0 / 2.4) - 0.055;
+    return x < 0.0031308 ? 12.92 * x : 1.055 * pow(abs(x), 1.0 / 2.4) - 0.055;
+}
+
+float3 SRGBToLinear(float3 x)
+{
+    return x < 0.04045f ? x / 12.92 : pow((x + 0.055) / 1.055, 2.4);
 }
 
 // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -138,4 +144,54 @@ float D_GGX(float NdotH, float m)
     float m2 = m * m;
     float f = (NdotH * m2 - NdotH) * NdotH + 1;
     return m2 / (f * f) ;
+}
+
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// Cubemap Texel Solid Angle
+// Ref: https://www.rorydriscoll.com/2012/01/15/cubemap-texel-solid-angle/
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+static float AreaElement(float x, float y)
+{
+    return atan2(x * y, sqrt(x * x + y * y + 1));
+}
+ 
+float TexelCoordSolidAngle(uint a_FaceIdx, float a_U, float a_V, uint a_Size)
+{
+    //scale up to [-1, 1] range (inclusive), offset by 0.5 to point to texel center.
+    float U = (2.0f * ((float) a_U + 0.5f) / (float) a_Size) - 1.0f;
+    float V = (2.0f * ((float) a_V + 0.5f) / (float) a_Size) - 1.0f;
+ 
+    float InvResolution = 1.0f / a_Size;
+ 
+    // U and V are the -1..1 texture coordinate on the current face.
+    // Get projected area for this texel
+    float x0 = U - InvResolution;
+    float y0 = V - InvResolution;
+    float x1 = U + InvResolution;
+    float y1 = V + InvResolution;
+    float SolidAngle = AreaElement(x0, y0) - AreaElement(x0, y1) - AreaElement(x1, y0) + AreaElement(x1, y1);
+ 
+    return SolidAngle;
+}
+
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// Importance sample diffuse light directions on a hemisphere
+// Ref: https://github.com/derkreature/IBLBaker/blob/72e08d1890e314a2a47ddf333eaa285f4d3820ca/data/shadersD3D11/smith.brdf#L153
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+float3 importanceSampleDiffuse(float2 Xi, float3 N)
+{
+    float CosTheta = 1.0 - Xi.y;
+    float SinTheta = sqrt(1.0 - CosTheta * CosTheta);
+    float Phi = 2 * PI * Xi.x;
+
+    float3 H;
+    H.x = SinTheta * cos(Phi);
+    H.y = SinTheta * sin(Phi);
+    H.z = CosTheta;
+
+    float3 UpVector = abs(N.z) < 0.999 ? float3(0, 0, 1) : float3(1, 0, 0);
+    float3 TangentX = normalize(cross(UpVector, N));
+    float3 TangentY = cross(N, TangentX);
+
+    return TangentX * H.x + TangentY * H.y + N * H.z;
 }

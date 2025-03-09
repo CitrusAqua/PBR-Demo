@@ -2,6 +2,10 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <FxCompile Include="shaders\createBRDFMap.hlsl" />
+    <FxCompile Include="shaders\generateMipmaps.hlsl" />
+    <FxCompile Include="shaders\thresholding.hlsl" />
+    <FxCompile Include="shaders\upsampleBlend.hlsl" />
+    <FxCompile Include="shaders\filter2DSeparable.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\helperFunctions.hlsli" />

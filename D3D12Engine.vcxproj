@@ -64,7 +64,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\third_party\openexr\include\OpenEXR;$(ProjectDir)\third_party\openexr\include\Imath;$(ProjectDir)\third_party\cgltf;$(ProjectDir)\third_party\tinyobjloader;$(ProjectDir)\third_party\tga\include;$(ProjectDir)\third_party\stbimage;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\third_party\openexr\include\OpenEXR;$(ProjectDir)\third_party\openexr\include\Imath;$(ProjectDir)\third_party\cgltf;$(ProjectDir)\third_party\tinyobjloader;$(ProjectDir)\third_party\stbimage;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAsWinRT>false</CompileAsWinRT>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -112,7 +112,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\third_party\openexr\include\OpenEXR;$(ProjectDir)\third_party\openexr\include\Imath;$(ProjectDir)\third_party\cgltf;$(ProjectDir)\third_party\tinyobjloader;$(ProjectDir)\third_party\tga\include;$(ProjectDir)\third_party\stbimage;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\third_party\openexr\include\OpenEXR;$(ProjectDir)\third_party\openexr\include\Imath;$(ProjectDir)\third_party\cgltf;$(ProjectDir)\third_party\tinyobjloader;$(ProjectDir)\third_party\stbimage;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAsWinRT>false</CompileAsWinRT>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -157,7 +157,7 @@
     <ClInclude Include="DescHeapWrapper.h" />
     <ClInclude Include="MatricesAndMeshes.h" />
     <ClInclude Include="HelperFunctions.h" />
-    <ClInclude Include="ShaderStructs.h" />
+    <ClInclude Include="ShaderSharedStructs.h" />
     <ClInclude Include="SMesh.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="STexture.h" />

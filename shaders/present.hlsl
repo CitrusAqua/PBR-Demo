@@ -1,23 +1,30 @@
-#include "../ShaderStructs.h"
+// present.hlsl
+// Handles the final tone mapping and display of the scene.
+// Bloom effect is also blended in here.
+
+#include "../ShaderSharedStructs.h"
 #include "helperFunctions.hlsli"
 
 #define g_RootSignature \
     "RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), " \
-    "CBV(b0, visibility = SHADER_VISIBILITY_PIXEL), " \
+    "RootConstants(b0, num32BitConstants = 2, visibility = SHADER_VISIBILITY_PIXEL), " \
 	"DescriptorTable(SRV(t0), visibility = SHADER_VISIBILITY_PIXEL), " \
+    "DescriptorTable(SRV(t1), visibility = SHADER_VISIBILITY_PIXEL), " \
 	"StaticSampler(s0, " \
         "filter = FILTER_MIN_MAG_MIP_LINEAR, " \
 		"visibility = SHADER_VISIBILITY_PIXEL, " \
 		"addressU = TEXTURE_ADDRESS_BORDER, " \
 		"addressV = TEXTURE_ADDRESS_BORDER, " \
-		"addressW = TEXTURE_ADDRESS_BORDER)"
+		"addressW = TEXTURE_ADDRESS_BORDER," \
+        "borderColor = STATIC_BORDER_COLOR_OPAQUE_BLACK)"
 
 #define DISPLAY_CURVE_SRGB      0
 #define DISPLAY_CURVE_LINEAR    1
 
 //ConstantBuffer<VertexShaderConstants> g_vscb : register(b0);
-ConstantBuffer<PixelShaderConstants> g_pscb : register(b0);
+ConstantBuffer<ToneMapperParams> g_tmp : register(b0);
 Texture2D g_hdrscene : register(t0);
+Texture2D g_hdrbloom : register(t1);
 SamplerState g_sampler : register(s0);
 
 struct VSInput
@@ -47,10 +54,11 @@ PSInput VSMain(VSInput input)
 [RootSignature(g_RootSignature)]
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    float3 scene = g_hdrscene.Sample(g_sampler, input.uv).rgb;
-    float3 result = scene;
-
-    if (g_pscb.ToneMappingMode == DISPLAY_CURVE_SRGB)
+    float3 scene = g_hdrscene.SampleLevel(g_sampler, input.uv, 0).rgb;
+    float3 bloom = g_hdrbloom.SampleLevel(g_sampler, input.uv, 0).rgb;
+    float3 result = lerp(scene, bloom, g_tmp.bloomIntensity);
+    
+    if (g_tmp.toneMappingMode == DISPLAY_CURVE_SRGB)
     {
         result = LinearToSRGB(result);
     }
@@ -58,6 +66,6 @@ float4 PSMain(PSInput input) : SV_TARGET
     {
         // Just pass through
     }
-
+    
     return float4(result, 1.0f);
 }

@@ -1,4 +1,4 @@
-#include "../ShaderStructs.h"
+#include "../ShaderSharedStructs.h"
 #include "helperFunctions.hlsli"
 
 #define g_RootSignature \
@@ -46,6 +46,9 @@ PSInput VSMain(VSInput input)
 [RootSignature(g_RootSignature)]
 float4 PSMain(PSInput input) : SV_TARGET
 {
+    uint cubeWidth, cubeHeight;
+    g_cubemap.GetDimensions(cubeWidth, cubeHeight);
+    
     float roughness = g_prefilter.roughness;
     // Right-handed coordinate system 
     float3 N = normalize(input.obj_position);
@@ -54,7 +57,12 @@ float4 PSMain(PSInput input) : SV_TARGET
     
     float3 prefiltered = float3(0.0f, 0.0f, 0.0f);
     float weight_sum = 0.0f;
-    uint NUM_SAMPLES = 4096u;
+    
+    // We need to set very large NUM_SAMPLES to get a good result
+    // because sun is not seperatly processed rught now.
+    // Fix to do: Add a directional light to the scene.
+    uint NUM_SAMPLES = 65536u;
+    
     for (uint i = 0; i < NUM_SAMPLES; ++i)
     {
         // Importance sample for GGX (Trowbridge-Reitz) distribution
@@ -65,8 +73,16 @@ float4 PSMain(PSInput input) : SV_TARGET
         float NoL = saturate(dot(N, L));
         if (NoL > 0.0f)
         {
+            // Compute Lod using inverse solid angle and pdf.
+            // From Chapter 20.4 Mipmap filtered samples in GPU Gems 3.
+            // https://developer.nvidia.com/gpugems/gpugems3/part-iii-rendering/chapter-20-gpu-based-importance-sampling
+            float pdf = NoL * INV_PI;
+            float solidAngleTexel = 4 * PI / (6 * cubeWidth * cubeWidth);
+            float solidAngleSample = 1.0 / (NUM_SAMPLES * pdf);
+            float lod = 0.5 * log2((float) (solidAngleSample / solidAngleTexel));
+            
             // Incoming lighe intensity is attenuated by factor NoL ( cosing theta L )
-            prefiltered += g_cubemap.Sample(g_sampler, L).rgb * NoL;
+            prefiltered += g_cubemap.SampleLevel(g_sampler, L, lod).rgb * NoL;
             weight_sum += NoL;
         }
     }
