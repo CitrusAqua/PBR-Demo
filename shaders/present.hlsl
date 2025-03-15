@@ -19,7 +19,8 @@
         "borderColor = STATIC_BORDER_COLOR_OPAQUE_BLACK)"
 
 #define DISPLAY_CURVE_SRGB      0
-#define DISPLAY_CURVE_LINEAR    1
+#define ACES_FILMIC             1
+#define DISPLAY_CURVE_LINEAR    2
 
 //ConstantBuffer<VertexShaderConstants> g_vscb : register(b0);
 ConstantBuffer<ToneMapperParams> g_tmp : register(b0);
@@ -61,6 +62,10 @@ float4 PSMain(PSInput input) : SV_TARGET
     if (g_tmp.toneMappingMode == DISPLAY_CURVE_SRGB)
     {
         result = LinearToSRGB(result);
+    }
+    else if (g_tmp.toneMappingMode == ACES_FILMIC)
+    {
+        result = ACESFilm(result);
     }
     else // ToneMappingMode == DISPLAY_CURVE_LINEAR
     {

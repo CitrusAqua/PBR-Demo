@@ -65,7 +65,7 @@ namespace
 	enum
 	{
 		ToneMappingMode_sRGB = 0,   // The display expects an sRGB signal.
-		//  ToneMappingMode_ST2084, // The display expects an HDR10 signal.
+		ToneMappingMode_ACESFilmic,
 		ToneMappingMode_None        // The display expects a linear signal.
 	};
 
