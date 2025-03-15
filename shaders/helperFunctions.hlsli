@@ -25,6 +25,16 @@ float3 SRGBToLinear(float3 x)
     return x < 0.04045f ? x / 12.92 : pow((x + 0.055) / 1.055, 2.4);
 }
 
+float3 ACESFilm(float3 x)
+{
+    float a = 2.51f;
+    float b = 0.03f;
+    float c = 2.43f;
+    float d = 0.59f;
+    float e = 0.14f;
+    return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
+}
+
 // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 // Spherical coordinates
 // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -125,10 +135,14 @@ float3 F_Schlick(float3 f0, float f90, float u)
 float V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 {
     // Original formulation of G_SmithGGX Correlated
-    // lambda_v = ( -1 + sqrt ( alphaG2 * (1 - NdotL2 ) / NdotL2 + 1)) * 0.5f;
-    // lambda_l = ( -1 + sqrt ( alphaG2 * (1 - NdotV2 ) / NdotV2 + 1)) * 0.5f;
-    // G_SmithGGXCorrelated = 1 / (1 + lambda_v + lambda_l );
-    // V_SmithGGXCorrelated = G_SmithGGXCorrelated / (4.0 f * NdotL * NdotV );
+    // float alphaG2 = alphaG * alphaG;
+    // float NdotL2 = NdotL * NdotL;
+    // float NdotV2 = NdotV * NdotV;
+    // float lambda_v = (-1 + sqrt(alphaG2 * (1 - NdotL2) / NdotL2 + 1)) * 0.5f;
+    // float lambda_l = (-1 + sqrt(alphaG2 * (1 - NdotV2) / NdotV2 + 1)) * 0.5f;
+    // float G_SmithGGXCorrelated = 1 / (1 + lambda_v + lambda_l);
+    // float V_SmithGGXCorrelated = G_SmithGGXCorrelated / (4.0f * NdotL * NdotV);
+    // return V_SmithGGXCorrelated;
 
     // This is the optimize version
     float alphaG2 = alphaG * alphaG;

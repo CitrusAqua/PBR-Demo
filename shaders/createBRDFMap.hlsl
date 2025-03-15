@@ -55,8 +55,14 @@ float2 IntegrateBRDF(float Roughness, float NoV)
             //B += Fc * G_Vis;
             
             float k = Roughness * Roughness / 2;
-            float G = SpecularG_UE4(NdotV, NdotL, k);
-            float G_Vis = G * VdotH / (NdotH * NdotV);
+            
+            // Unreal Engine 4 style
+            //float G = SpecularG_UE4(NdotV, NdotL, k);
+            //float G_Vis = G * VdotH / (NdotH * NdotV);
+            
+            // Frostbite Engine style
+            float G_Vis = V_SmithGGXCorrelated(NdotL, NdotV, Roughness);
+            
             float Fc = pow(1.0f - VdotH, 5.0f);
             A += (1.0f - Fc) * G_Vis;
             B += Fc * G_Vis;

@@ -36,9 +36,10 @@ void D3D12Engine::OnInit()
 
 	// Load any assets here.
 	LoadAssets();
+	//LoadIBL("resources/hdris/little_paris_eiffel_tower_2k.exr");
 	//LoadIBL("resources/hdris/veranda_4k.exr");
 	//LoadIBL("resources/hdris/illovo_beach_balcony_4k.exr");
-	//LoadIBL("resources/hdris/brown_photostudio_02_8k.exr");
+	LoadIBL("resources/hdris/brown_photostudio_02_8k.exr");
 	//LoadIBL("resources/hdris/blaubeuren_church_square_4k.exr");
 
 
@@ -648,13 +649,17 @@ void D3D12Engine::LoadAssets()
 				D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 		}
+	}
 
+	uint32_t sphereCount = m_textures.size();
+	for (uint32_t i = 0; i < sphereCount; ++i)
+	{
 		// Create sphere model for the texture
 		SMesh sphere;
 		sphere.Load("resources/meshes/Sphere.obj");
 		sphere.GenerateTangents();
 		sphere.CreateConstants(m_HH);
-		sphere.MoveTo(XMFLOAT3(-1.0f * m_textures.size() / 2.0f + i * 1.0f, 0.0f, 0.0f));
+		sphere.MoveTo(XMFLOAT3(-1.0f * sphereCount / 2.0f + i * 1.0f, 0.0f, 0.0f));
 		sphere.CopyToUploadHeap(m_device.Get(), m_commandList.Get());
 		sphere.ReleaseCPUData();
 		m_meshes.push_back(sphere);
@@ -1318,7 +1323,7 @@ void D3D12Engine::BloomEffect(ComPtr<ID3D12Resource>& cascade, D3D12_GPU_DESCRIP
 		// Blend
 		BlendParams blendParams;
 		blendParams.mipLevel = i;
-		blendParams.blendFactor = 0.7f;
+		blendParams.blendFactor = 0.6f;
 		blendParams.targetWidth = dstWidth;
 		blendParams.targetHeight = dstHeight;
 		blendParams.uvScale.x = 1.0f / (float)(dstWidth << (i + 1));  // See upsampleBlend.hlsl for details.
@@ -1521,7 +1526,7 @@ void D3D12Engine::OnRender()
 	m_commandList->ClearRenderTargetView(m_RTV_frameBuffers[m_frameIndex], CLEAR_COLOR, 0, nullptr);
 
 	ToneMapperParams tmparams;
-	tmparams.toneMappingMode = ToneMappingMode_sRGB;
+	tmparams.toneMappingMode = ToneMappingMode_ACESFilmic;
 	tmparams.bloomIntensity = 0.3f;
 
 	// Process the intermediate and draw into the swap chain render target.

@@ -44,6 +44,6 @@ A real-time graphics engine implements Physically Based Rendering (PBR) pipeline
 ## Screenshots
 ![Materials](./screenshots/materials.png)
 
-![Materials](./screenshots/glow.png)
+![Materials](./screenshots/bloom2.png)
 
 ![Materials](./screenshots/bloom.png)
