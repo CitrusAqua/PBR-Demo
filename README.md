@@ -42,8 +42,8 @@ A real-time graphics engine implements Physically Based Rendering (PBR) pipeline
 - [x] Supersampling anti-aliasing (SSAA).
 
 ## Screenshots
-![Materials](./screenshots/screenshot_materials.png)
+![Materials](./screenshots/materials.png)
 
-![Bloom2](./screenshots/screenshot_bloom2.png)
+![Bloom2](./screenshots/bloom2.png)
 
-![Bloom](./screenshots/screenshot_bloom.png)
+![Bloom](./screenshots/bloom.png)
