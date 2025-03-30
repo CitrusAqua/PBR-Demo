@@ -399,3 +399,11 @@ FodyWeavers.xsd
 
 # PIX Captures
 captures/
+
+# Compiled shaders
+*.ps.cso
+*.ps.h
+*.vs.cso
+*.vs.h
+*.cs.cso
+*.cs.h
